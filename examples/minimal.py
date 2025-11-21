@@ -10,7 +10,7 @@ class Train(Options):
 
 @dataclass
 class Main(Options):
-    train: Train = Train()
+    train: Train = option(default_factory=Train)
     model: str = option(default="resnet", choices=["resnet", "vit"])
 
 

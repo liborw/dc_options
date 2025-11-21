@@ -19,5 +19,10 @@ Pytest discovers files named `test_*.py`; keep new tests in the existing suite t
 ## Commit & Pull Request Guidelines
 Craft imperative, present-tense commit subjects (e.g., `feat: extend path setter errors`) and keep related changes grouped tightly. Reference GitHub/issue IDs in the body when applicable. Pull requests need a problem statement, summary of changes, test evidence (`uv run pytest -q`), and screenshots or snippets if docs or CLI output changed. Ensure CI is green, requested reviews are addressed, and documentation/regression gaps are noted before merging.
 
+### Git Commits
+- Commit only complete, tested features or fixes; avoid mixing unrelated refactors with functional changes.
+- Prefer small, reviewable commits that explain why the change exists; include context in the body if the diff isn’t obvious.
+- Keep the branch history clean by rebasing before opening a PR and resolve conflicts locally to prevent noisy merge commits.
+
 ## Documentation & Metadata Tips
 Treat metadata as source: double-check `min`, `max`, `choices`, and labels before exporting docs. Regenerate Markdown via a short `uv run python` snippet calling `Options.export_docs`, then preview with `mkdocs serve` if documentation is published. Keep templates generic so downstream consumers can reuse them without editing framework internals, and avoid project-specific jargon inside shared helpers.

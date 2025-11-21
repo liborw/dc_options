@@ -10,7 +10,7 @@ class Inner(Options):
 @dataclass
 class Config(Options):
     a: int = option(default=5, min=1)
-    inner: Inner = Inner()
+    inner: Inner = option(default_factory=Inner)
 
 
 def test_basic_values():

@@ -1,10 +1,11 @@
-from dataclasses import field
+from dataclasses import MISSING, field
 from typing import Any, Optional, List
 
 
 def option(
-    default: Any = None,
+    default: Any = MISSING,
     *,
+    default_factory = MISSING,
     label: Optional[str] = None,
     description: Optional[str] = None,
     editable: bool = True,
@@ -13,10 +14,17 @@ def option(
     step: Optional[float] = None,
     choices: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
+    **field_kwargs,
 ):
     """
     Wraps a dataclass field with metadata describing UI, validation and documentation.
     """
+    if default is not MISSING and default_factory is not MISSING:
+        raise ValueError("option() cannot accept both default and default_factory.")
+
+    if "default" in field_kwargs or "default_factory" in field_kwargs:
+        raise ValueError("Use option() parameters for default/default_factory.")
+
     meta = {
         "label": label,
         "description": description,
@@ -27,4 +35,13 @@ def option(
         "choices": choices,
         "labels": labels,
     }
-    return field(default=default, metadata={"option": meta})
+    metadata = dict(field_kwargs.pop("metadata", {}) or {})
+    metadata["option"] = meta
+
+    params = {"metadata": metadata, **field_kwargs}
+    if default is not MISSING:
+        params["default"] = default
+    if default_factory is not MISSING:
+        params["default_factory"] = default_factory
+
+    return field(**params)

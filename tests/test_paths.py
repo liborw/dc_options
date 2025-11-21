@@ -9,7 +9,7 @@ class A(Options):
 
 @dataclass
 class Root(Options):
-    a: A = A()
+    a: A = option(default_factory=A)
 
 
 def test_path_get_set():
