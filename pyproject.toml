@@ -13,8 +13,39 @@ authors = [
 ]
 
 requires-python = ">=3.9"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+]
+keywords = ["dataclasses", "configuration", "options", "cli"]
 
 dependencies = [
     "dacite>=1.8",
     "jinja2>=3.1"
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/liborw/dc-options"
+Source = "https://github.com/liborw/dc-options"
+Issues = "https://github.com/liborw/dc-options/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["dc_options"]
+
+[tool.setuptools.package-data]
+"dc_options" = ["docs_template.md.j2"]
