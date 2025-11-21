@@ -24,5 +24,10 @@ Craft imperative, present-tense commit subjects (e.g., `feat: extend path setter
 - Prefer small, reviewable commits that explain why the change exists; include context in the body if the diff isn’t obvious.
 - Keep the branch history clean by rebasing before opening a PR and resolve conflicts locally to prevent noisy merge commits.
 
+## Documentation Hygiene
+- Keep `README.md` aligned with the current feature set—update installation, usage, and command sections whenever behavior changes.
+- Refresh generated Markdown or MkDocs pages when option metadata, CLI flags, or templates change, and mention the updates in PR summaries.
+- Link new contributor guidance back to `AGENTS.md` so documentation remains the single source of truth for workflows.
+
 ## Documentation & Metadata Tips
 Treat metadata as source: double-check `min`, `max`, `choices`, and labels before exporting docs. Regenerate Markdown via a short `uv run python` snippet calling `Options.export_docs`, then preview with `mkdocs serve` if documentation is published. Keep templates generic so downstream consumers can reuse them without editing framework internals, and avoid project-specific jargon inside shared helpers.

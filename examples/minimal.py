@@ -3,24 +3,40 @@ from dc_options import Options, option
 
 
 @dataclass
-class Train(Options):
-    epochs: int = option(default=10, min=1, label="Epoch Count")
-    lr: float = option(default=0.01, min=0)
+class Logging(Options):
+    level: str = option(
+        default="info",
+        choices=["debug", "info", "warning", "error"],
+        description="Verbosity of the training logs",
+    )
+    directory: str = option(
+        default="runs/",
+        description="Destination folder for checkpoints and metrics",
+    )
+    flush_interval: int = option(
+        default=10,
+        min=1,
+        description="How often (in steps) metrics are synced to disk",
+    )
 
 
 @dataclass
-class Main(Options):
-    train: Train = option(default_factory=Train)
-    model: str = option(default="resnet", choices=["resnet", "vit"])
+class Train(Options):
+    epochs: int = option(default=10, min=1, label="Epoch Count")
+    lr: float = option(default=0.01, min=0, description="Learning rate")
+    batch_size: int = option(default=32, min=1, description="Samples per optimizer step")
+    logging: Logging = option(default_factory=Logging)
 
 
 if __name__ == "__main__":
-    cfg = Main()
-    cfg.dump()
+    cfg = Train()
+    print("== Default configuration ==")
+    print(cfg.dumps())
 
-    parser = Main.build_argparser()
-    args = parser.parse_args()
-    cfg.apply_cli_overrides(args)
+    cfg.set("logging.level", "debug")
+    cfg.set("epochs", 5)
 
     cfg.validate()
-    cfg.dump()
+    print("\n== After overrides ==")
+    print(cfg.dumps())
+    print(f"Logs directory via path lookup: {cfg.get('logging.directory')}")
