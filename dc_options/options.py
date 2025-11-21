@@ -222,9 +222,9 @@ class Options:
 
             out.append({
                 "name": prefix + f.name,
-                "type": f.type.__name__,
+                "type": f.type,
                 "label": meta.get("label") or f.name,
-                "description": meta.get("description") or "",
+                "description": meta.get("description", ""),
                 "min": meta.get("min"),
                 "max": meta.get("max"),
                 "step": meta.get("step"),
