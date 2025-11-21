@@ -74,7 +74,7 @@ class Options:
             value = getattr(self, f.name)
             meta = f.metadata.get("option", {})
 
-            if is_dataclass(value):
+            if is_dataclass(value) and isinstance(value, Options):
                 value.validate()
                 continue
 
