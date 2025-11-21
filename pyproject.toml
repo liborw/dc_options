@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "dc-options"
-version = "0.1.0"
+version = "0.2.0"
 description = "Dataclass-driven configuration helpers with metadata, validation, path access, argparse integration, and documentation generation."
 readme = "README.md"
 license = "MIT"
