@@ -35,6 +35,10 @@ def option(
         "choices": choices,
         "labels": labels,
     }
+    if default is not MISSING:
+        meta["default"] = default
+    if default_factory is not MISSING:
+        meta["default_factory"] = default_factory
     metadata = dict(field_kwargs.pop("metadata", {}) or {})
     metadata["option"] = meta
 
