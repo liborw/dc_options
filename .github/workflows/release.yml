@@ -1,0 +1,70 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Detect version change
+        id: version
+        run: |
+          python3 - <<'PY'
+import os
+import pathlib
+import re
+import subprocess
+
+def extract_version(text: str) -> str:
+    match = re.search(r'^version\s*=\s*"([^"]+)"', text, re.MULTILINE)
+    return match.group(1) if match else ""
+
+current_text = pathlib.Path("pyproject.toml").read_text()
+current = extract_version(current_text)
+
+try:
+    previous_text = subprocess.check_output(
+        ["git", "show", "HEAD^:pyproject.toml"], text=True
+    )
+except subprocess.CalledProcessError:
+    previous = ""
+else:
+    previous = extract_version(previous_text)
+
+changed = bool(current and current != previous)
+
+with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as fh:
+    fh.write(f"current={current}\n")
+    fh.write(f"previous={previous}\n")
+    fh.write(f"changed={'true' if changed else 'false'}\n")
+PY
+
+      - name: Set up uv
+        if: steps.version.outputs.changed == 'true'
+        uses: astral-sh/setup-uv@v3
+        with:
+          python-version: "3.11"
+
+      - name: Build artifacts
+        if: steps.version.outputs.changed == 'true'
+        run: |
+          uv sync --extra dev
+          uv build
+
+      - name: Create GitHub Release
+        if: steps.version.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.current }}
+          name: v${{ steps.version.outputs.current }}
+          generate_release_notes: true
+          files: dist/*
