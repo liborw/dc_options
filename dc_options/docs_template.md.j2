@@ -3,12 +3,11 @@
 {% for opt in options %}
 ## {{ opt.label }} — `{{ opt.name }}`
 
-**Type:** `{{ opt.type }}`
-{{ opt.description }}
+{% if opt.description %}{{ opt.description }}{% endif %}
 
-{% if opt.choices %}**Choices:** {{ opt.choices }}{% endif %}
-{% if opt.min is not none %}**Min:** {{ opt.min }}{% endif %}
-{% if opt.max is not none %}**Max:** {{ opt.max }}{% endif %}
-
+ - **Type:** `{{ opt.type }}`
+{% if opt.choices %} - **Choices:** {{ opt.choices }}{% endif %}
+{% if opt.min is not none %} - **Min:** {{ opt.min }}{% endif %}
+{% if opt.max is not none %} - **Max:** {{ opt.max }}{% endif %}
 ---
 {% endfor %}
