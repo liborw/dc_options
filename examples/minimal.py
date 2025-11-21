@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from options import Options, option
+from dc_options import Options, option
 
 
 @dataclass

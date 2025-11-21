@@ -1,11 +1,11 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-Core source lives in `options/`: `options.py` exposes the `Options` base class, `metadata.py` defines the `option()` helper, and `docs_template.md.j2` renders configuration docs. `examples/minimal.py` demonstrates how downstream apps define concrete option trees. Tests are grouped in `tests/` (`test_dump.py`, `test_paths.py`, etc.) and should mirror the module they verify. Project-level settings such as `pyproject.toml` and `mkdocs.yml` stay at the workspace root, while generated docs belong under `docs/` folders created by contributors.
+Core source lives in `dc_options/`: `options.py` exposes the `Options` base class, `metadata.py` defines the `option()` helper, and `docs_template.md.j2` renders configuration docs. `examples/minimal.py` demonstrates how downstream apps define concrete option trees. Tests are grouped in `tests/` (`test_dump.py`, `test_paths.py`, etc.) and should mirror the module they verify. Project-level settings such as `pyproject.toml` and `mkdocs.yml` stay at the workspace root, while generated docs belong under `docs/` folders created by contributors.
 
 ## Build, Test, and Development Commands
 - `uv sync`: install or update dependencies declared in `pyproject.toml`.
-- `uv pip install --editable .`: expose the package as `options` inside the virtual environment for ad‑hoc local work.
+- `uv pip install --editable .`: expose the package as `dc_options` inside the virtual environment for ad‑hoc local work.
 - `uv run pytest tests -q`: execute the full suite; combine with `-k name` for targeted runs.
 - `uv run python examples/minimal.py`: sanity-check the sample configuration and metadata wiring.
 - `uv run python - <<'PY' ... PY`: handy for one-off scripts (e.g., calling `Options.export_docs` to refresh rendered documentation).

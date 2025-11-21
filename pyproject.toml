@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "options-framework"
+name = "dc-options"
 version = "0.1.0"
-description = "A flexible dataclass-based options/parameters framework with metadata, validation, dumping, path-based access, argparse integration, and documentation generation."
+description = "Dataclass-driven configuration helpers with metadata, validation, path access, argparse integration, and documentation generation."
 readme = "README.md"
 license = { text = "MIT" }
 authors = [

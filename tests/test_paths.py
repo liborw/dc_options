@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from options import Options, option
+from dc_options import Options, option
 
 
 @dataclass
@@ -17,4 +17,3 @@ def test_path_get_set():
     assert r.get("a.b") == 10
     r.set("a.b", 20)
     assert r.get("a.b") == 20
-

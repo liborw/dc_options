@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from options import Options, option
+from dc_options import Options, option
 import pytest
 
 
@@ -15,4 +15,3 @@ def test_validation_ok():
 def test_validation_fail():
     with pytest.raises(ValueError):
         C(v=100).validate()
-

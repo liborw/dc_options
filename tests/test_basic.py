@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from options import Options, option
+from dc_options import Options, option
 
 
 @dataclass
@@ -18,4 +18,3 @@ def test_basic_values():
     assert cfg.a == 5
     assert cfg.inner.x == 1
     cfg.validate()
-
