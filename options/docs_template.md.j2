@@ -1,0 +1,14 @@
+# Options Documentation
+
+{% for opt in options %}
+## {{ opt.label }} — `{{ opt.name }}`
+
+**Type:** `{{ opt.type }}`
+{{ opt.description }}
+
+{% if opt.choices %}**Choices:** {{ opt.choices }}{% endif %}
+{% if opt.min is not none %}**Min:** {{ opt.min }}{% endif %}
+{% if opt.max is not none %}**Max:** {{ opt.max }}{% endif %}
+
+---
+{% endfor %}

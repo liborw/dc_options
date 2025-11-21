@@ -1,0 +1,15 @@
+
+site_name: dataclasses-options
+theme:
+  name: null
+nav:
+  - Home: index.md
+  - Usage: usage.md
+  - API: api.md
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            show_source: false
