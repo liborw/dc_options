@@ -49,5 +49,12 @@ cfg.apply_cli_overrides(parser.parse_args())
 - Generate fresh docs with `uv run python - <<'PY' ... Options.export_docs(...)`.
 - Preview site content through MkDocs (`mkdocs serve`) if documentation is published.
 
+## Metadata Reference
+- `label` / `description` – available for every field; provide human-readable names and context.
+- `editable` – all field types; mark values that should be read-only in generated UIs.
+- `min`, `max`, `step` – numeric fields (`int`/`float`); used for validation and slider widgets.
+- `choices`, `labels` – enumerations (`str`, `int`, etc.); specify allowed values and friendly labels.
+- `default`, `default_factory` – all fields; stored in metadata for resets or documentation.
+
 ## Contributing
 Follow `AGENTS.md` for project structure tips, coding style, testing expectations, and git hygiene. Every feature or fix should ship with regression tests and refreshed docs whenever CLI behavior or configuration metadata changes.
