@@ -55,7 +55,7 @@ class Options:
             meta = f.metadata.get("option", {})
 
             if is_dataclass(value):
-                cls._dump_collect(f.type, value, out, prefix=f"{name}.")
+                cls._dump_collect(type(value), value, out, prefix=f"{name}.")
                 continue
 
             out.append(f"{name} = {repr(value)}")
@@ -181,4 +181,3 @@ class Options:
                 "step": meta.get("step"),
                 "choices": meta.get("choices"),
             })
-

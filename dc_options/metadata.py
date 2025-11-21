@@ -35,6 +35,7 @@ def option(
         "choices": choices,
         "labels": labels,
     }
+    meta = {k: v for k, v in meta.items() if v is not None}
     if default is not MISSING:
         meta["default"] = default
     if default_factory is not MISSING:
