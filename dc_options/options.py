@@ -1,10 +1,11 @@
-import json
 import argparse
 from dataclasses import dataclass, fields, is_dataclass, asdict
-from typing import Type, TypeVar
+from typing import Any, Dict, Type, TypeVar
+from pathlib import Path
 
 from dacite import from_dict, Config as DaciteConfig
 from jinja2 import Template
+
 
 T = TypeVar("T", bound="Options")
 
@@ -26,15 +27,38 @@ class Options:
     # -------------------------------------------------------------------------
     # Load / Save
     # -------------------------------------------------------------------------
+
     @classmethod
-    def load(cls: Type[T], filename: str) -> T:
-        with open(filename, "r") as f:
-            data = json.load(f)
-        return from_dict(data_class=cls, data=data, config=DaciteConfig(strict=True))
+    def from_dict(cls: Type[T], data: Dict[str, Any]) -> T:
+        return from_dict(data_class=cls, data=data, config=DaciteConfig())
+
+    @classmethod
+    def load(cls: Type[T], path: str | Path ) -> T:
+        path = Path(path)
+        ext = path.suffix.lower()
+
+        if ext in {".json"}:
+            import json
+            data = json.loads(path.read_text())
+
+        elif ext in {".toml"}:
+            import tomllib
+            data = tomllib.loads(path.read_text())
+
+        elif ext in {".yaml", ".yml"}:
+            import yaml
+            data = yaml.safe_load(path.read_text())
+
+        else:
+            raise ValueError(f"Unsupported file extension: {ext}")
+
+        return cls.from_dict(data)
 
     def save(self, filename: str):
         with open(filename, "w") as f:
             json.dump(asdict(self), f, indent=2)
+
+
 
     # -------------------------------------------------------------------------
     # Human-readable dump
