@@ -1,5 +1,5 @@
 from dataclasses import MISSING, field
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Callable
 
 
 def option(
@@ -14,6 +14,8 @@ def option(
     step: Optional[float] = None,
     choices: Optional[List[str]] = None,
     labels: Optional[List[str]] = None,
+    serialize: Optional[Callable[[Any], Any]] = None,
+    deserialize: Optional[Callable[[Any], Any]] = None,
     **field_kwargs,
 ):
     """
@@ -34,6 +36,8 @@ def option(
         "step": step,
         "choices": choices,
         "labels": labels,
+        "serialize": serialize,
+        "deserialize": deserialize,
     }
     meta = {k: v for k, v in meta.items() if v is not None}
     if default is not MISSING:

@@ -4,7 +4,7 @@ Dataclass-first configuration helpers with validation, metadata, argparse wiring
 
 ## Features
 - Declarative configuration via dataclasses and an `option()` helper carrying labels, ranges, choices, and UI hints.
-- Strict loading/saving from JSON using `dacite` with metadata validation baked in.
+- Built-in JSON load/save with optional per-field serialize/deserialize hooks.
 - Path-based getters/setters (`cfg.get("training.lr")`) for ergonomic CLI or scripting overrides.
 - Argparse integration that maps metadata to command-line flags.
 - Documentation export using Jinja2 templates so UI teams and docs stay synced with code.
@@ -55,6 +55,7 @@ cfg.apply_cli_overrides(parser.parse_args())
 - `min`, `max`, `step` – numeric fields (`int`/`float`); used for validation and slider widgets.
 - `choices`, `labels` – enumerations (`str`, `int`, etc.); specify allowed values and friendly labels.
 - `default`, `default_factory` – all fields; stored in metadata for resets or documentation.
+- `serialize`, `deserialize` – scalar fields; callables that map custom objects (e.g., `Path`) to/from JSON-safe data.
 
 ## Contributing
 Follow `AGENTS.md` for project structure tips, coding style, testing expectations, and git hygiene. Every feature or fix should ship with regression tests and refreshed docs whenever CLI behavior or configuration metadata changes.

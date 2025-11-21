@@ -1,9 +1,8 @@
 import argparse
-from dataclasses import dataclass, fields, is_dataclass, asdict
+from dataclasses import dataclass, fields, is_dataclass
 from typing import Any, Dict, Type, TypeVar
 from pathlib import Path
 
-from dacite import from_dict, Config as DaciteConfig
 from jinja2 import Template
 
 
@@ -30,7 +29,12 @@ class Options:
 
     @classmethod
     def from_dict(cls: Type[T], data: Dict[str, Any]) -> T:
-        return from_dict(data_class=cls, data=data, config=DaciteConfig())
+        kwargs = {}
+        for f in fields(cls):
+            if f.name not in data:
+                continue
+            kwargs[f.name] = cls._deserialize_field(f, data[f.name])
+        return cls(**kwargs)
 
     @classmethod
     def load(cls: Type[T], path: str | Path ) -> T:
@@ -52,13 +56,34 @@ class Options:
         else:
             raise ValueError(f"Unsupported file extension: {ext}")
 
-        return cls.from_dict(data)
-
-    def save(self, filename: str):
-        with open(filename, "w") as f:
-            json.dump(asdict(self), f, indent=2)
+        return cls.from_dict(data=data)
 
 
+    def save(self, path: str | Path):
+
+        path = Path(path)
+        ext = path.suffix.lower()
+
+        if ext in {".json"}:
+            import json
+            with open(path, "w") as f:
+                json.dump(self.to_dict(), f, indent=2)
+
+        elif ext in {".toml"}:
+            import toml
+            with open(path, "w") as f:
+                toml.dump(self.to_dict(), f)
+
+        elif ext in {".yaml", ".yml"}:
+            import yaml
+            with open(path, "w") as f:
+                yaml.dump(self.to_dict(), f, indent=2)
+
+    def to_dict(self) -> Dict[str, Any]:
+        result = {}
+        for f in fields(self):
+            result[f.name] = self._serialize_field(f, getattr(self, f.name))
+        return result
 
     # -------------------------------------------------------------------------
     # Human-readable dump
@@ -205,3 +230,43 @@ class Options:
                 "step": meta.get("step"),
                 "choices": meta.get("choices"),
             })
+
+    # -------------------------------------------------------------------------
+    # Serialization helpers
+    # -------------------------------------------------------------------------
+    @classmethod
+    def _serialize_field(cls, f, value):
+        if value is None:
+            return None
+
+        meta = f.metadata.get("option", {})
+        serializer = meta.get("serialize")
+        if serializer:
+            return serializer(value)
+
+        if isinstance(value, Options):
+            return value.to_dict()
+
+        return value
+
+    @classmethod
+    def _deserialize_field(cls, f, raw):
+        if raw is None:
+            return None
+
+        if cls._is_options_type(f.type):
+            return f.type.from_dict(raw)
+
+        meta = f.metadata.get("option", {})
+        deserializer = meta.get("deserialize")
+        if deserializer:
+            return deserializer(raw)
+
+        return raw
+
+    @staticmethod
+    def _is_options_type(tp):
+        try:
+            return issubclass(tp, Options)
+        except TypeError:
+            return False
