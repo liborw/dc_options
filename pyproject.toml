@@ -7,7 +7,7 @@ name = "dc-options"
 version = "0.1.0"
 description = "Dataclass-driven configuration helpers with metadata, validation, path access, argparse integration, and documentation generation."
 readme = "README.md"
-license = { text = "MIT" }
+license = "MIT"
 authors = [
     { name = "Libor Wagner", email = "libor.wagner@cvut.cz" }
 ]
