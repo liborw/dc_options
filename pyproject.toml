@@ -1,6 +1,6 @@
 [build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
 
 [project]
 name = "dc-options"
@@ -42,9 +42,22 @@ Homepage = "https://github.com/liborw/dc-options"
 Source = "https://github.com/liborw/dc-options"
 Issues = "https://github.com/liborw/dc-options/issues"
 
-[tool.setuptools.packages.find]
-where = ["."]
-include = ["dc_options"]
+[tool.hatch.build]
+include = [
+    "dc_options/**",
+]
 
-[tool.setuptools.package-data]
-"dc_options" = ["docs_template.md.j2"]
+[tool.hatch.build.targets.sdist]
+include = [
+    "dc_options/**",
+    "README.md",
+]
+
+[tool.hatch.build.targets.wheel]
+include = [
+    "dc_options/**",
+]
+
+# Include template file shipped with the package
+[tool.hatch.build.force-include]
+"dc_options/docs_template.md.j2" = "dc_options/docs_template.md.j2"
