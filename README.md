@@ -8,6 +8,7 @@ Dataclass-first configuration helpers with validation, metadata, argparse wiring
 - Path-based getters/setters (`cfg.get("training.lr")`) for ergonomic CLI or scripting overrides.
 - Argparse integration that maps metadata to command-line flags.
 - Documentation export using Jinja2 templates so UI teams and docs stay synced with code.
+- Whole-structure validation that reports every issue in a single `ValidationError` report.
 
 ## Project Layout
 ```

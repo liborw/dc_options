@@ -8,6 +8,18 @@ T = TypeVar("T", bound="Options")
 
 
 @dataclass
+class ValidationIssue:
+    path: str
+    message: str
+
+
+class ValidationError(Exception):
+    def __init__(self, issues: list[ValidationIssue]):
+        self.issues = issues
+        summary = "\n".join(f"- {issue.path}: {issue.message}" for issue in issues)
+        super().__init__(f"{len(issues)} validation error(s) found:\n{summary}")
+
+
 class Options:
     """
     Base class for rich dataclass-based configuration.
@@ -87,23 +99,38 @@ class Options:
     # Validation
     # -------------------------------------------------------------------------
     def validate(self):
-        for f in fields(self):
-            value = getattr(self, f.name)
+        issues = self.collect_validation_errors()
+        if issues:
+            raise ValidationError(issues)
+
+    def collect_validation_errors(self) -> list[ValidationIssue]:
+        return self._collect_validation_errors(self.__class__, self)
+
+    @classmethod
+    def _collect_validation_errors(cls, datacls, instance, prefix: str = "") -> list[ValidationIssue]:
+        issues: list[ValidationIssue] = []
+        for f in fields(datacls):
+            path = prefix + f.name
+            value = getattr(instance, f.name)
             meta = f.metadata.get("option", {})
 
-            if is_dataclass(value) and isinstance(value, Options):
-                value.validate()
+            if value is None:
+                continue
+
+            if cls._is_options_type(f.type):
+                issues.extend(cls._collect_validation_errors(f.type, value, prefix=path + "."))
                 continue
 
             if (m := meta.get("min")) is not None and value < m:
-                raise ValueError(f"'{f.name}' must be >= {m}")
+                issues.append(ValidationIssue(path, f"must be >= {m}"))
 
             if (m := meta.get("max")) is not None and value > m:
-                raise ValueError(f"'{f.name}' must be <= {m}")
+                issues.append(ValidationIssue(path, f"must be <= {m}"))
 
-            if (choices := meta.get("choices")):
-                if value not in choices:
-                    raise ValueError(f"'{f.name}' must be one of {choices}")
+            if (choices := meta.get("choices")) and value not in choices:
+                issues.append(ValidationIssue(path, f"must be one of {choices}"))
+
+        return issues
 
     # -------------------------------------------------------------------------
     # Path-based get / set
