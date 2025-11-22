@@ -6,7 +6,7 @@ from dc_options import Options, option, export_options
 
 @dataclass
 class Train(Options):
-    epochs: int = option(default=10, min=1)
+    epochs: int = option(default=10, range=(1, None))
     lr: float = option(default=0.01)
 
 
