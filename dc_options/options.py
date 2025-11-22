@@ -116,6 +116,8 @@ class Options:
             meta = f.metadata.get("option", {})
 
             if value is None:
+                if meta.get("required"):
+                    issues.append(ValidationIssue(path, "is required"))
                 continue
 
             if cls._is_options_type(f.type):

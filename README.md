@@ -67,6 +67,7 @@ cfg.apply_cli_overrides(parser.parse_args())
 ## Metadata Reference
 - `label` / `description` – available for every field; provide human-readable names and context.
 - `editable` – all field types; mark values that should be read-only in generated UIs.
+- `required` – mark fields that must not be `None`.
 - `min`, `max`, `step` – numeric fields (`int`/`float`); used for validation and slider widgets.
 - `choices`, `labels` – enumerations (`str`, `int`, etc.); specify allowed values and friendly labels.
 - `default`, `default_factory` – all fields; stored in metadata for resets or documentation.
