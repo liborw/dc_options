@@ -11,4 +11,4 @@ def test_dump_contains_metadata():
     t = T()
     s = t.dumps()
     assert "Alpha" in s
-    assert "a =" in s
+    assert "a (Alpha) =" in s

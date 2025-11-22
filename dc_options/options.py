@@ -1,7 +1,8 @@
 import argparse
 from dataclasses import dataclass, fields, is_dataclass
-from typing import Any, Dict, Type, TypeVar
+from importlib import resources
 from pathlib import Path
+from typing import Any, Dict, Type, TypeVar
 
 from jinja2 import Template
 
@@ -89,31 +90,10 @@ class Options:
     # Human-readable dump
     # -------------------------------------------------------------------------
     def dumps(self) -> str:
-        lines = []
-        self._dump_collect(self.__class__, self, lines, prefix="")
-        return "\n".join(lines)
+        return self.render_template()
 
     def dump(self):
         print(self.dumps())
-
-    @classmethod
-    def _dump_collect(cls, datacls, instance, out, prefix):
-        for f in fields(datacls):
-            name = prefix + f.name
-            value = getattr(instance, f.name)
-            meta = f.metadata.get("option", {})
-
-            if is_dataclass(value):
-                cls._dump_collect(type(value), value, out, prefix=f"{name}.")
-                continue
-
-            out.append(f"{name} = {repr(value)}")
-
-            for k, v in meta.items():
-                if v is not None:
-                    out.append(f"    {k}: {v}")
-
-            out.append("")
 
     # -------------------------------------------------------------------------
     # Validation
@@ -201,35 +181,67 @@ class Options:
     # -------------------------------------------------------------------------
     # Documentation
     # -------------------------------------------------------------------------
-    def export_docs(self, template_file: str, output_file: str):
-        with open(template_file) as f:
-            tpl = Template(f.read())
+    def render_template(self, template: str | Path | None = None, *, format: str = "plain") -> str:
+        tpl_source = self._resolve_template(template, format)
+        tpl = Template(tpl_source)
+        structure = self._collect_docs(self.__class__, include_values=True, instance=self)
+        return tpl.render(options=structure)
 
-        items = []
-        self._collect_docs(items, self.__class__)
+    def export(self, output_file: str | Path, template: str | Path | None = None, *, format: str = "plain"):
+        Path(output_file).write_text(self.render_template(template, format=format))
 
-        with open(output_file, "w") as f:
-            f.write(tpl.render(options=items))
+    def export_docs(self, output_file: str | Path, template: str | Path | None = None):
+        self.export(output_file, template=template, format="markdown")
+
+    def _resolve_template(self, template: str | Path | None, format: str) -> str:
+        if template:
+            return Path(template).read_text()
+
+        templates = {
+            "plain": "templates/plain.txt.j2",
+            "markdown": "templates/docs.md.j2",
+        }
+        rel_path = templates.get(format, templates["plain"])
+        return resources.files("dc_options").joinpath(rel_path).read_text()
 
     @classmethod
-    def _collect_docs(cls, out, datacls, prefix=""):
+    def _collect_docs(cls, datacls, *, include_values=False, instance=None, prefix=""):
+        entries = []
         for f in fields(datacls):
             meta = f.metadata.get("option", {})
+            label = meta.get("label") or f.name
+            description = meta.get("description")
+            value = getattr(instance, f.name) if instance is not None else None
 
-            if is_dataclass(f.type):
-                cls._collect_docs(out, f.type, prefix + f.name + ".")
+            if cls._is_options_type(f.type):
+                entries.append({
+                    "kind": "section",
+                    "name": f.name,
+                    "label": label,
+                    "description": description,
+                    "path": prefix + f.name,
+                    "children": cls._collect_docs(f.type, include_values=include_values, instance=value, prefix=prefix + f.name + "."),
+                })
                 continue
 
-            out.append({
-                "name": prefix + f.name,
-                "type": f.type,
-                "label": meta.get("label") or f.name,
-                "description": meta.get("description", ""),
-                "min": meta.get("min"),
-                "max": meta.get("max"),
-                "step": meta.get("step"),
-                "choices": meta.get("choices"),
+            entries.append({
+                "kind": "field",
+                "name": f.name,
+                "label": label,
+                "description": description,
+                "path": prefix + f.name,
+                "value": value,
+                "meta": {
+                    "type": cls._type_name(f.type),
+                    "min": meta.get("min"),
+                    "max": meta.get("max"),
+                    "step": meta.get("step"),
+                    "choices": meta.get("choices") or [],
+                    "labels": meta.get("labels") or [],
+                    "default": meta.get("default"),
+                },
             })
+        return entries
 
     # -------------------------------------------------------------------------
     # Serialization helpers
@@ -270,3 +282,7 @@ class Options:
             return issubclass(tp, Options)
         except TypeError:
             return False
+
+    @staticmethod
+    def _type_name(tp):
+        return getattr(tp, "__name__", str(tp))

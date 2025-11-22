@@ -1,0 +1,22 @@
+# Options Documentation
+
+{% macro render(items, level=2) -%}
+{%- for item in items %}
+{{ ("#" * level) }} {{ item.label }}{% if item.kind == "field" %} — `{{ item.path }}`{% endif %}
+{% if item.description %}{{ item.description }}
+{% endif -%}
+{%- if item.kind == "section" %}
+{{ render(item.children, level + 1) }}
+{%- else %}
+{%- if item.meta.type %}- **Type:** `{{ item.meta.type }}`{% endif %}
+{%- if item.meta.default is not none %}- **Default:** `{{ item.meta.default }}`{% endif %}
+{%- if item.meta.choices %}- **Choices:** {{ item.meta.choices | join(", ") }}{% endif %}
+{%- if item.meta.min is not none %}- **Min:** {{ item.meta.min }}{% endif %}
+{%- if item.meta.max is not none %}- **Max:** {{ item.meta.max }}{% endif %}
+{%- if item.meta.step is not none %}- **Step:** {{ item.meta.step }}{% endif %}
+{%- endif %}
+
+{%- endfor %}
+{%- endmacro %}
+
+{{ render(options, 2) }}

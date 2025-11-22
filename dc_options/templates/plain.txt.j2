@@ -1,0 +1,18 @@
+{% macro render(items, prefix="") -%}
+{%- for item in items %}
+{%- if item.kind == "section" %}
+{{ prefix }}[{{ item.label }}]
+{{ render(item.children, prefix + item.name + ".") }}
+{%- else %}
+{{ prefix }}{{ item.name }} ({{ item.label }}) = {{ item.value | default("", true) }}
+{%- for key, val in item.meta.items() %}
+{%- if val is not none and (val is not string or val) and (val != []) %}
+{{ prefix }}  {{ key }}: {{ val }}
+{%- endif %}
+{%- endfor %}
+
+{%- endif %}
+{%- endfor %}
+{%- endmacro %}
+
+{{ render(options) }}

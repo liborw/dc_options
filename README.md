@@ -45,8 +45,8 @@ cfg.apply_cli_overrides(parser.parse_args())
 - `examples/argparse_example.py` demonstrates combining JSON loading with CLI overrides using `build_argparser`.
 
 ## Documentation
-- Update option metadata before exporting docs; the default template lives in `dc_options/docs_template.md.j2`.
-- Generate fresh docs with `uv run python - <<'PY' ... Options.export_docs(...)`.
+- Update option metadata before exporting; the built-in templates live under `dc_options/templates/`.
+- Render plain text dumps with `cfg.render_template()` or markdown docs with `cfg.render_template(format="markdown")`; use `cfg.export("docs/options.md")` to write to disk.
 - Preview site content through MkDocs (`mkdocs serve`) if documentation is published.
 
 ## Metadata Reference
