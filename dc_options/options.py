@@ -20,6 +20,7 @@ class ValidationError(Exception):
         super().__init__(f"{len(issues)} validation error(s) found:\n{summary}")
 
 
+@dataclass
 class Options:
     """
     Base class for rich dataclass-based configuration.
@@ -121,11 +122,18 @@ class Options:
                 issues.extend(cls._collect_validation_errors(f.type, value, prefix=path + "."))
                 continue
 
-            if (m := meta.get("min")) is not None and value < m:
-                issues.append(ValidationIssue(path, f"must be >= {m}"))
-
-            if (m := meta.get("max")) is not None and value > m:
-                issues.append(ValidationIssue(path, f"must be <= {m}"))
+            rng = meta.get("range")
+            if rng is not None:
+                lower, upper = rng
+                if lower is not None and value < lower:
+                    issues.append(ValidationIssue(path, f"must be >= {lower}"))
+                if upper is not None and value > upper:
+                    issues.append(ValidationIssue(path, f"must be <= {upper}"))
+            else:
+                if (m := meta.get("min")) is not None and value < m:
+                    issues.append(ValidationIssue(path, f"must be >= {m}"))
+                if (m := meta.get("max")) is not None and value > m:
+                    issues.append(ValidationIssue(path, f"must be <= {m}"))
 
             if (choices := meta.get("choices")) and value not in choices:
                 issues.append(ValidationIssue(path, f"must be one of {choices}"))

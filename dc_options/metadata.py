@@ -1,5 +1,6 @@
+import warnings
 from dataclasses import MISSING, field
-from typing import Any, Optional, List, Callable
+from typing import Any, Optional, List, Callable, Tuple
 
 
 def option(
@@ -16,6 +17,7 @@ def option(
     labels: Optional[List[str]] = None,
     serialize: Optional[Callable[[Any], Any]] = None,
     deserialize: Optional[Callable[[Any], Any]] = None,
+    range: Optional[Tuple[Optional[float], Optional[float]]] = None,
     **field_kwargs,
 ):
     """
@@ -27,18 +29,39 @@ def option(
     if "default" in field_kwargs or "default_factory" in field_kwargs:
         raise ValueError("Use option() parameters for default/default_factory.")
 
+    range_min = None
+    range_max = None
+    if range is not None:
+        if len(range) != 2:
+            raise ValueError("range must be a 2-tuple (min, max).")
+        range_min, range_max = range
+
+    if min is not None or max is not None:
+        warnings.warn(
+            "option(): 'min'/'max' parameters are deprecated; use 'range' instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if min is not None:
+            range_min = min if range_min is None else min
+        if max is not None:
+            range_max = max if range_max is None else max
+
     meta = {
         "label": label,
         "description": description,
         "editable": editable,
-        "min": min,
-        "max": max,
+        "min": range_min,
+        "max": range_max,
         "step": step,
         "choices": choices,
         "labels": labels,
         "serialize": serialize,
         "deserialize": deserialize,
     }
+    if range_min is not None or range_max is not None:
+        meta["range"] = (range_min, range_max)
+
     meta = {k: v for k, v in meta.items() if v is not None}
     if default is not MISSING:
         meta["default"] = default
