@@ -44,6 +44,20 @@ cfg.apply_cli_overrides(parser.parse_args())
 ## Examples
 - `examples/minimal.py` shows nested option classes, validation, and `get`/`set` helpers that operate on dot paths.
 - `examples/argparse_example.py` demonstrates combining JSON loading with CLI overrides using `build_argparser`.
+- Custom validation is possible by overriding `collect_validation_errors`. For example:
+  ```python
+  @dataclass
+  class Flags(Options):
+      enable_a: bool = option(default=False)
+      enable_b: bool = option(default=False)
+
+      def collect_validation_errors(self):
+          issues = super().collect_validation_errors()
+          if self.enable_a and self.enable_b:
+              issues.append(ValidationIssue("enable_b", "cannot be true when enable_a is true"))
+          return issues
+  ```
+  Calling `Flags(enable_a=True, enable_b=True).validate()` now raises a `ValidationError` listing both built-in and custom issues so users can fix everything in one pass.
 
 ## Documentation
 - Update option metadata before exporting; the built-in templates live under `dc_options/templates/`.

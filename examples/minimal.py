@@ -26,6 +26,14 @@ class Train(Options):
     lr: float = option(default=0.01, min=0, description="Learning rate")
     batch_size: int = option(default=32, min=1, description="Samples per optimizer step")
     logging: Logging = option(default_factory=Logging)
+    use_amp: bool = option(default=False, description="Enable mixed precision")
+    debug_mode: bool = option(default=False, description="Enable debug instrumentation")
+
+    def collect_validation_errors(self):
+        issues = super().collect_validation_errors()
+        if self.use_amp and self.debug_mode:
+            issues.append(ValidationIssue("debug_mode", "cannot combine AMP with debug mode"))
+        return issues
 
 
 if __name__ == "__main__":
