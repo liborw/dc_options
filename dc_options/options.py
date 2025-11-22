@@ -1,10 +1,7 @@
 import argparse
 from dataclasses import dataclass, fields, is_dataclass
-from importlib import resources
 from pathlib import Path
 from typing import Any, Dict, Type, TypeVar
-
-from jinja2 import Template
 
 
 T = TypeVar("T", bound="Options")
@@ -85,15 +82,6 @@ class Options:
         for f in fields(self):
             result[f.name] = self._serialize_field(f, getattr(self, f.name))
         return result
-
-    # -------------------------------------------------------------------------
-    # Human-readable dump
-    # -------------------------------------------------------------------------
-    def dumps(self) -> str:
-        return self.render_template()
-
-    def dump(self):
-        print(self.dumps())
 
     # -------------------------------------------------------------------------
     # Validation
@@ -177,71 +165,6 @@ class Options:
             if v is None:
                 continue
             self.set(k, v)
-
-    # -------------------------------------------------------------------------
-    # Documentation
-    # -------------------------------------------------------------------------
-    def render_template(self, template: str | Path | None = None, *, format: str = "plain") -> str:
-        tpl_source = self._resolve_template(template, format)
-        tpl = Template(tpl_source)
-        structure = self._collect_docs(self.__class__, include_values=True, instance=self)
-        return tpl.render(options=structure)
-
-    def export(self, output_file: str | Path, template: str | Path | None = None, *, format: str = "plain"):
-        Path(output_file).write_text(self.render_template(template, format=format))
-
-    def export_docs(self, output_file: str | Path, template: str | Path | None = None):
-        self.export(output_file, template=template, format="markdown")
-
-    def _resolve_template(self, template: str | Path | None, format: str) -> str:
-        if template:
-            return Path(template).read_text()
-
-        templates = {
-            "plain": "templates/plain.txt.j2",
-            "markdown": "templates/docs.md.j2",
-        }
-        rel_path = templates.get(format, templates["plain"])
-        return resources.files("dc_options").joinpath(rel_path).read_text()
-
-    @classmethod
-    def _collect_docs(cls, datacls, *, include_values=False, instance=None, prefix=""):
-        entries = []
-        for f in fields(datacls):
-            meta = f.metadata.get("option", {})
-            label = meta.get("label") or f.name
-            description = meta.get("description")
-            value = getattr(instance, f.name) if instance is not None else None
-
-            if cls._is_options_type(f.type):
-                entries.append({
-                    "kind": "section",
-                    "name": f.name,
-                    "label": label,
-                    "description": description,
-                    "path": prefix + f.name,
-                    "children": cls._collect_docs(f.type, include_values=include_values, instance=value, prefix=prefix + f.name + "."),
-                })
-                continue
-
-            entries.append({
-                "kind": "field",
-                "name": f.name,
-                "label": label,
-                "description": description,
-                "path": prefix + f.name,
-                "value": value,
-                "meta": {
-                    "type": cls._type_name(f.type),
-                    "min": meta.get("min"),
-                    "max": meta.get("max"),
-                    "step": meta.get("step"),
-                    "choices": meta.get("choices") or [],
-                    "labels": meta.get("labels") or [],
-                    "default": meta.get("default"),
-                },
-            })
-        return entries
 
     # -------------------------------------------------------------------------
     # Serialization helpers

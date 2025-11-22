@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from dc_options import Options, option
+from dc_options import Options, option, render_options
 
 
 @dataclass
@@ -31,12 +31,12 @@ class Train(Options):
 if __name__ == "__main__":
     cfg = Train()
     print("== Default configuration ==")
-    print(cfg.dumps())
+    print(render_options(cfg))
 
     cfg.set("logging.level", "debug")
     cfg.set("epochs", 5)
 
     cfg.validate()
     print("\n== After overrides ==")
-    print(cfg.dumps())
+    print(render_options(cfg))
     print(f"Logs directory via path lookup: {cfg.get('logging.directory')}")

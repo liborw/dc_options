@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from dc_options import Options, option
+from dc_options import Options, option, render_options
 
 
 @dataclass
@@ -16,13 +16,13 @@ class Config(Options):
 
 def test_render_template_plain():
     cfg = Config()
-    output = cfg.render_template()
+    output = render_options(cfg)
     assert "[Inner Block]" in output
     assert "inner.value" in output
 
 
 def test_render_template_markdown():
     cfg = Config()
-    output = cfg.render_template(format="markdown")
+    output = render_options(cfg, format="markdown")
     assert "## Inner Block" in output
     assert "title" in output

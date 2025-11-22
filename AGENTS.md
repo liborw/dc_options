@@ -8,7 +8,7 @@ Core source lives in `dc_options/`: `options.py` exposes the `Options` base clas
 - `uv pip install --editable .`: expose the package as `dc_options` inside the virtual environment for ad‑hoc local work.
 - `uv run pytest tests -q`: execute the full suite; combine with `-k name` for targeted runs.
 - `uv run python examples/minimal.py`: sanity-check the sample configuration and metadata wiring.
-- `uv run python - <<'PY' ... PY`: handy for one-off scripts (e.g., calling `Options.export_docs` to refresh rendered documentation).
+- `uv run python - <<'PY' ... PY`: handy for one-off scripts (e.g., calling `dc_options.rendering.export_options` to refresh rendered documentation).
 
 ## Coding Style & Naming Conventions
 Follow PEP 8 with 4-space indents, expressive type hints, and snake_case identifiers for fields (`time_step`). Configuration dataclasses inherit from `Options` and use PascalCase (`RenderingOptions`). Every tunable value must wrap the field with `option(...)` metadata so validation, CLI flags, and docs remain aligned. Keep helper functions side-effect-free; when mutation is required, encapsulate it inside clearly named instance methods.
@@ -30,4 +30,4 @@ Craft imperative, present-tense commit subjects (e.g., `feat: extend path setter
 - Link new contributor guidance back to `AGENTS.md` so documentation remains the single source of truth for workflows.
 
 ## Documentation & Metadata Tips
-Treat metadata as source: double-check `min`, `max`, `choices`, and labels before exporting docs. Use `serialize`/`deserialize` hooks when storing custom objects (e.g., `Path`) so JSON load/save stays lossless. Regenerate Markdown via a short `uv run python` snippet calling `Options.export_docs`, then preview with `mkdocs serve` if documentation is published. Keep templates generic so downstream consumers can reuse them without editing framework internals, and avoid project-specific jargon inside shared helpers.
+Treat metadata as source: double-check `min`, `max`, `choices`, and labels before exporting docs. Use `serialize`/`deserialize` hooks when storing custom objects (e.g., `Path`) so JSON load/save stays lossless. Prefer the helpers in `dc_options.rendering` (`render_options`, `export_options`) to produce plain text or markdown output, swapping templates as needed. Keep templates generic so downstream consumers can reuse them without editing framework internals, and avoid project-specific jargon inside shared helpers.

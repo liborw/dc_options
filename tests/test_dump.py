@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from dc_options import Options, option
+from dc_options import Options, option, render_options
 
 
 @dataclass
@@ -9,6 +9,6 @@ class T(Options):
 
 def test_dump_contains_metadata():
     t = T()
-    s = t.dumps()
+    s = render_options(t)
     assert "Alpha" in s
     assert "a (Alpha) =" in s

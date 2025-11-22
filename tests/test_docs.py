@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-from dc_options import Options, option
+from dc_options import Options, option, export_options
 
 
 @dataclass
@@ -19,7 +19,7 @@ class Config(Options):
 def test_export_docs_default_template(tmp_path):
     cfg = Config()
     output = tmp_path / "options.md"
-    cfg.export_docs(output)
+    export_options(cfg, output, format="markdown")
     content = output.read_text()
     assert "Training" in content
     assert "epochs" in content

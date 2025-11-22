@@ -46,7 +46,7 @@ cfg.apply_cli_overrides(parser.parse_args())
 
 ## Documentation
 - Update option metadata before exporting; the built-in templates live under `dc_options/templates/`.
-- Render plain text dumps with `cfg.render_template()` or markdown docs with `cfg.render_template(format="markdown")`; use `cfg.export("docs/options.md")` to write to disk.
+- Use `dc_options.rendering.render_options` / `export_options` to produce plain text or markdown views; pass custom template paths when needed.
 - Preview site content through MkDocs (`mkdocs serve`) if documentation is published.
 
 ## Metadata Reference
