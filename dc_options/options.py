@@ -1,4 +1,5 @@
 import argparse
+import importlib
 from dataclasses import dataclass, fields, is_dataclass
 from pathlib import Path
 from typing import Any, Dict, Type, TypeVar
@@ -57,11 +58,11 @@ class Options:
             data = json.loads(path.read_text())
 
         elif ext in {".toml"}:
-            import tomllib
-            data = tomllib.loads(path.read_text())
+            toml = _require_module("toml", "toml")
+            data = toml.loads(path.read_text())
 
         elif ext in {".yaml", ".yml"}:
-            import yaml
+            yaml = _require_module("yaml", "yaml")
             data = yaml.safe_load(path.read_text())
 
         else:
@@ -81,14 +82,14 @@ class Options:
                 json.dump(self.to_dict(), f, indent=2)
 
         elif ext in {".toml"}:
-            import toml
+            toml = _require_module("toml", "toml")
             with open(path, "w") as f:
                 toml.dump(self.to_dict(), f)
 
         elif ext in {".yaml", ".yml"}:
-            import yaml
+            yaml = _require_module("yaml", "yaml")
             with open(path, "w") as f:
-                yaml.dump(self.to_dict(), f, indent=2)
+                yaml.safe_dump(self.to_dict(), f, indent=2)
 
     def to_dict(self) -> Dict[str, Any]:
         result = {}
@@ -247,3 +248,13 @@ class Options:
     @staticmethod
     def _type_name(tp):
         return getattr(tp, "__name__", str(tp))
+
+
+def _require_module(module: str, extra: str):
+    try:
+        return importlib.import_module(module)
+    except ImportError as exc:
+        raise RuntimeError(
+            f"Module '{module}' is required for this operation. Install the optional dependency via "
+            f"`pip install dc-options[{extra}]`."
+        ) from exc

@@ -9,6 +9,8 @@ Dataclass-first configuration helpers with validation, metadata, argparse wiring
 - Argparse integration that maps metadata to command-line flags.
 - Documentation export using Jinja2 templates so UI teams and docs stay synced with code.
 - Whole-structure validation that reports every issue in a single `ValidationError` report.
+- [ ] Export yaml and toml with comments describing each option, through template rendering.
+- [ ] Source tracking, source of the value (default, config, cmd, user ...).
 
 ## Project Layout
 ```
@@ -25,6 +27,8 @@ uv sync                             # install deps in .venv
 uv run python examples/minimal.py   # inspect nested configs & path helpers
 uv run python examples/argparse_example.py --serve.port 9090 --workers 4
 uv run pytest tests -q              # run the test suite
+# install optional IO extras for YAML/TOML support
+uv pip install "./.[io]"
 ```
 
 To pull configuration from JSON or args:
