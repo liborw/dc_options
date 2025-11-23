@@ -69,7 +69,7 @@ cfg.apply_cli_overrides(parser.parse_args())
 - `editable` – all field types; mark values that should be read-only in generated UIs.
 - `required` – mark fields that must not be `None`.
 - `range`, `step` – numeric fields (`int`/`float`); `range=(min, max)` constrains bounds while `step` guides UI controls.
-- `choices`, `labels` – enumerations (`str`, `int`, etc.); specify allowed values and friendly labels.
+- `choices`, `labels` – enumerations (`str`, `int`, etc.); specify allowed values and friendly labels. Set `choice_strict=False` to permit values outside the provided list.
 - `default`, `default_factory` – all fields; stored in metadata for resets or documentation.
 - `serialize`, `deserialize` – scalar fields; callables that map custom objects (e.g., `Path`) to/from JSON-safe data.
 

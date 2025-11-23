@@ -137,8 +137,9 @@ class Options:
                 if (m := meta.get("max")) is not None and value > m:
                     issues.append(ValidationIssue(path, f"must be <= {m}"))
 
-            if (choices := meta.get("choices")) and value not in choices:
-                issues.append(ValidationIssue(path, f"must be one of {choices}"))
+            if meta.get("choice_strict", True):
+                if (choices := meta.get("choices")) and value not in choices:
+                    issues.append(ValidationIssue(path, f"must be one of {choices}"))
 
         return issues
 
