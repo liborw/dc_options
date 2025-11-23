@@ -15,16 +15,16 @@ class Logging(Options):
     )
     flush_interval: int = option(
         default=10,
-        min=1,
+        range=(1, None),
         description="How often (in steps) metrics are synced to disk",
     )
 
 
 @dataclass
 class Train(Options):
-    epochs: int = option(default=10, min=1, label="Epoch Count")
-    lr: float = option(default=0.01, min=0, description="Learning rate")
-    batch_size: int = option(default=32, min=1, description="Samples per optimizer step")
+    epochs: int = option(default=10, range=(1, None), label="Epoch Count")
+    lr: float = option(default=0.01, range=(0, None), description="Learning rate")
+    batch_size: int = option(default=32, range=(1, None), description="Samples per optimizer step")
     logging: Logging = option(default_factory=Logging)
     use_amp: bool = option(default=False, description="Enable mixed precision")
     debug_mode: bool = option(default=False, description="Enable debug instrumentation")
