@@ -293,51 +293,31 @@ def replace_text(
     newstr: str,
     sec_start: str,
     sec_end: Optional[str] = None,
-    replace_all: bool = True,
 ) -> str:
     """
-    Replace occurrences of text enclosed by sec_start and sec_end
-    (including the markers themselves) with newstr.
+    Replace the *first* occurrence of text inside sec_start ... sec_end
+    while preserving both markers.
 
-    If sec_end is None, use sec_start.
-
-    If replace_all is True (default), replace all occurrences.
-    If replace_all is False, replace only the first occurrence.
+    If sec_end is None, use sec_start as a symmetric marker.
     """
-
     sec_end = sec_end or sec_start
-    result = []
-    i = 0
-    n = len(instr)
-    replaced_count = 0
 
-    while i < n:
-        # Find start marker
-        start_idx = instr.find(sec_start, i)
-        if start_idx == -1:
-            result.append(instr[i:])
-            break
+    # Find the first start marker
+    start_idx = instr.find(sec_start)
+    if start_idx == -1:
+        return instr
 
-        # Append text before marker
-        result.append(instr[i:start_idx])
+    content_start = start_idx + len(sec_start)
 
-        # Find end marker
-        end_idx = instr.find(sec_end, start_idx + len(sec_start))
-        if end_idx == -1:
-            # No closing marker → append rest
-            result.append(instr[start_idx:])
-            break
+    # Find the corresponding end marker
+    end_idx = instr.find(sec_end, content_start)
+    if end_idx == -1:
+        return instr
 
-        # Skip entire marked region
-        i = end_idx + len(sec_end)
-
-        # Insert replacement
-        result.append(newstr)
-        replaced_count += 1
-
-        # Stop after first replacement if requested
-        if not replace_all and replaced_count == 1:
-            result.append(instr[i:])
-            break
-
-    return "".join(result)
+    # Build new string: before marker + marker + new content + marker + after
+    return (
+        instr[:content_start] +
+        newstr +
+        sec_end +
+        instr[end_idx + len(sec_end):]
+    )
