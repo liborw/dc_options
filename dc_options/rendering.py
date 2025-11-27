@@ -236,7 +236,7 @@ def _resolve_template(template_path: str | Path) -> str:
     )
 
 
-def render(data: Options, template: str | Path = "plain.txt.j2", config: RenderConfig | None = None) -> str:
+def render(data: Options, template: str | Path = "plain.txt.jinja", config: RenderConfig | None = None) -> str:
     tpl_source = _resolve_template(template)
     tpl = Template(tpl_source)
     structure = collect_docs(data.__class__, instance=data)

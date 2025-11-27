@@ -1,0 +1,50 @@
+{%- macro render_field(field, level, config) %}
+{%- set indent = "  " * level %}
+{%- set is_default = (field.meta.default is not none and field.meta.value == field.meta.default) %}
+
+{# --- field documentation --- #}
+{{ indent }}# {{ field.label }}
+{%- if field.description %}
+{{ indent }}# {{ field.description }}
+{%- endif %}
+{%- if field.doc %}
+{{ indent }}# {{ field.doc }}
+{%- endif %}
+
+{# --- render actual key/value --- #}
+{%- if not config.render_values %}
+{{ indent }}# {{ field.name }}: {{ field.meta.type_name }}
+{%- else %}
+    {%- if is_default and config.render_defaults_commented %}
+{{ indent }}# {{ field.name }}: {{ field.meta.value }}
+    {%- else %}
+{{ indent }}{{ field.name }}: {{ field.meta.value }}
+    {%- endif %}
+{%- endif %}
+{%- endmacro %}
+
+
+{%- macro render_section(section, level, config) %}
+{%- set indent = "  " * level %}
+
+{# --- section header documentation --- #}
+{%- if section.meta and section.meta.description %}
+{{ indent }}# {{ section.meta.description }}
+{%- endif %}
+{%- if section.meta and section.meta.doc %}
+{{ indent }}# {{ section.meta.doc }}
+{%- endif %}
+
+{# --- render each child --- #}
+{%- for child in section.children %}
+    {%- if child.__class__.__name__ == "DocField" %}
+{{ render_field(child, level, config) }}
+    {%- else %}
+{{ indent }}{{ child.name }}:
+{{ render_section(child, level+1, config) }}
+    {%- endif %}
+{%- endfor %}
+{%- endmacro %}
+
+{# --- invoke rendering --- #}
+{{ render_section(options, 0, config) }}

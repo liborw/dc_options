@@ -1,6 +1,6 @@
 from .options import Options, ValidationError, ValidationIssue, options
 from .metadata import option
-from .rendering import render, collect_docs
+from .rendering import render, collect_docs, replace_text
 
 __all__ = [
     "Options",
@@ -9,5 +9,6 @@ __all__ = [
     "ValidationIssue",
     "option",
     "render",
+    "replace_text",
     "collect_docs",
 ]
