@@ -1,6 +1,43 @@
-import warnings
-from dataclasses import MISSING, field
+from dataclasses import MISSING, dataclass, field
 from typing import Any, Optional, List, Callable, Tuple
+
+
+@dataclass
+class OptionMeta:
+    label: Optional[str] = None
+    description: Optional[str] = None
+    editable: bool = True
+    required: bool = False
+    step: Optional[float] = None
+    choices: Optional[List[Any]] = None
+    choice_strict: bool = True
+    labels: Optional[List[str]] = None
+    serialize: Optional[Callable[[Any], Any]] = None
+    deserialize: Optional[Callable[[Any], Any]] = None
+    bounds: Optional[Tuple[Optional[float], Optional[float]]] = None
+    default: Any = None
+    default_factory: Any = None
+    doc: Optional[str] = None
+
+    def cleaned(self) -> dict:
+        """Convert to plain dict but without None values, matching current semantics."""
+        d = {
+            "label": self.label,
+            "description": self.description,
+            "editable": self.editable,
+            "required": self.required,
+            "step": self.step,
+            "choices": self.choices,
+            "choice_strict": self.choice_strict,
+            "labels": self.labels,
+            "serialize": self.serialize,
+            "deserialize": self.deserialize,
+            "bunds": self.bounds,
+            "doc": self.doc,
+            "default": self.default,
+            "default_factory": self.default_factory,
+        }
+        return {k: v for k, v in d.items() if v is not None}
 
 
 def option(
@@ -11,15 +48,13 @@ def option(
     description: Optional[str] = None,
     editable: bool = True,
     required: bool = False,
-    min: Optional[float] = None,
-    max: Optional[float] = None,
     step: Optional[float] = None,
     choices: Optional[List[Any]] = None,
     choice_strict: bool = True,
     labels: Optional[List[str]] = None,
     serialize: Optional[Callable[[Any], Any]] = None,
     deserialize: Optional[Callable[[Any], Any]] = None,
-    range: Optional[Tuple[Optional[float], Optional[float]]] = None,
+    bounds: Optional[Tuple[Optional[float], Optional[float]]] = None,
     doc: Optional[str] = None,
     **field_kwargs,
 ):
@@ -32,47 +67,23 @@ def option(
     if "default" in field_kwargs or "default_factory" in field_kwargs:
         raise ValueError("Use option() parameters for default/default_factory.")
 
-    range_min = None
-    range_max = None
-    if range is not None:
-        if len(range) != 2:
-            raise ValueError("range must be a 2-tuple (min, max).")
-        range_min, range_max = range
+    meta = OptionMeta(
+        label=label,
+        description=description,
+        editable=editable,
+        required=required,
+        step=step,
+        choices=choices,
+        choice_strict=choice_strict,
+        labels=labels,
+        serialize=serialize,
+        deserialize=deserialize,
+        bounds=bounds,
+        default=default if default is not MISSING else None,
+        default_factory=default_factory if default_factory is not MISSING else None,
+        doc=doc,
+    )
 
-    if min is not None or max is not None:
-        warnings.warn(
-            "option(): 'min'/'max' parameters are deprecated; use 'range' instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        if min is not None:
-            range_min = min if range_min is None else min
-        if max is not None:
-            range_max = max if range_max is None else max
-
-    meta = {
-        "label": label,
-        "description": description,
-        "editable": editable,
-        "required": required,
-        "min": range_min,
-        "max": range_max,
-        "step": step,
-        "choices": choices,
-        "choice_strict": choice_strict,
-        "labels": labels,
-        "serialize": serialize,
-        "deserialize": deserialize,
-        "doc": doc
-    }
-    if range_min is not None or range_max is not None:
-        meta["range"] = (range_min, range_max)
-
-    meta = {k: v for k, v in meta.items() if v is not None}
-    if default is not MISSING:
-        meta["default"] = default
-    if default_factory is not MISSING:
-        meta["default_factory"] = default_factory
     metadata = dict(field_kwargs.pop("metadata", {}) or {})
     metadata["option"] = meta
 

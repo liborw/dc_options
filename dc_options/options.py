@@ -4,6 +4,8 @@ from dataclasses import dataclass, fields, is_dataclass
 from pathlib import Path
 from typing import Any, Dict, Type, TypeVar
 
+from dc_options.metadata import OptionMeta
+
 
 T = TypeVar("T", bound="Options")
 
@@ -114,10 +116,11 @@ class Options:
         for f in fields(datacls):
             path = prefix + f.name
             value = getattr(instance, f.name)
-            meta = f.metadata.get("option", {})
+
+            meta: OptionMeta | None = f.metadata.get("option")
 
             if value is None:
-                if meta.get("required"):
+                if meta is not None and meta.required:
                     issues.append(ValidationIssue(path, "is required"))
                 continue
 
@@ -125,21 +128,15 @@ class Options:
                 issues.extend(cls._collect_validation_errors(f.type, value, prefix=path + "."))
                 continue
 
-            rng = meta.get("range")
-            if rng is not None:
-                lower, upper = rng
+            if meta is not None and meta.bounds is not None:
+                lower, upper = meta.bounds
                 if lower is not None and value < lower:
                     issues.append(ValidationIssue(path, f"must be >= {lower}"))
                 if upper is not None and value > upper:
                     issues.append(ValidationIssue(path, f"must be <= {upper}"))
-            else:
-                if (m := meta.get("min")) is not None and value < m:
-                    issues.append(ValidationIssue(path, f"must be >= {m}"))
-                if (m := meta.get("max")) is not None and value > m:
-                    issues.append(ValidationIssue(path, f"must be <= {m}"))
 
-            if meta.get("choice_strict", True):
-                if (choices := meta.get("choices")) and value not in choices:
+            if meta is not None and meta.choice_strict:
+                if (choices := meta.choices) and value not in choices:
                     issues.append(ValidationIssue(path, f"must be one of {choices}"))
 
         return issues
@@ -182,20 +179,23 @@ class Options:
     def _add_fields(cls, parser, datacls, prefix=""):
         for f in fields(datacls):
             name = prefix + f.name
-            meta = f.metadata.get("option", {})
+            meta: OptionMeta | None = f.metadata.get("option")
 
             if is_dataclass(f.type):
                 cls._add_fields(parser, f.type, prefix=name + ".")
                 continue
 
             arg = "--" + name.replace("_", "-")
-            kwargs = {"help": meta.get("description", "")}
+            kwargs = {}
+
+            if meta is not None and meta.description is not None:
+                kwargs["help"] = meta.description
 
             if f.type in (int, float, str):
                 kwargs["type"] = f.type
 
-            if meta.get("choices"):
-                kwargs["choices"] = meta["choices"]
+            if meta is not None and meta.choices is not None:
+                kwargs["choices"] = meta.choices
 
             parser.add_argument(arg, **kwargs)
 
@@ -213,10 +213,9 @@ class Options:
         if value is None:
             return None
 
-        meta = f.metadata.get("option", {})
-        serializer = meta.get("serialize")
-        if serializer:
-            return serializer(value)
+        meta: OptionMeta | None = f.metadata.get("option")
+        if meta is not None and meta.serialize is not None:
+            return meta.serialize(value)
 
         if isinstance(value, Options):
             return value.to_dict()
@@ -231,10 +230,9 @@ class Options:
         if cls._is_options_type(f.type):
             return f.type.from_dict(raw)
 
-        meta = f.metadata.get("option", {})
-        deserializer = meta.get("deserialize")
-        if deserializer:
-            return deserializer(raw)
+        meta: OptionMeta | None = f.metadata.get("option")
+        if meta is not None and meta.deserialize is not None:
+            return meta.deserialize(raw)
 
         return raw
 

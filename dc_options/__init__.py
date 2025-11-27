@@ -1,12 +1,13 @@
-from .options import Options, ValidationError, ValidationIssue
+from .options import Options, ValidationError, ValidationIssue, options
 from .metadata import option
-from .rendering import render_options, export_options
+from .rendering import render, collect_docs
 
 __all__ = [
     "Options",
+    "options",
     "ValidationError",
     "ValidationIssue",
     "option",
-    "render_options",
-    "export_options",
+    "render",
+    "collect_docs",
 ]

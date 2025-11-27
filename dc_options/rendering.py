@@ -2,76 +2,242 @@
 
 from __future__ import annotations
 
-from dataclasses import fields
+from dataclasses import dataclass, field, fields
 from importlib import resources
 from pathlib import Path
-from typing import Any
+from typing import Any, List, Optional, Union, get_args, get_origin
 
 from jinja2 import Template
 
-from .options import Options
+from .options import Options, options
+from .metadata import OptionMeta, option
 
 
-def render_options(options: Options, template: str | Path | None = None, *, format: str = "plain") -> str:
-    tpl_source = _resolve_template(template, format)
-    tpl = Template(tpl_source)
-    structure = _collect_docs(options.__class__, include_values=True, instance=options)
-    return tpl.render(options=structure)
+# -------------------------------------------------------------------
+# Config
+# -------------------------------------------------------------------
+
+@options
+class RenderConfig:
+    section_level: int = option(
+        default=1,
+        description="Level of the configuration section"
+    )
+    section_title: str = option(
+        default="Configuration Options",
+        description="Title of the configuration section",
+    )
+
+# -------------------------------------------------------------------
+# Base node
+# -------------------------------------------------------------------
+
+@dataclass
+class DocNode:
+    """Base class for documentation nodes."""
+    name: str
+    label: str
+    description: Optional[str]
+    doc: Optional[str]
+    path: str
 
 
-def export_options(options: Options, output: str | Path, template: str | Path | None = None, *, format: str = "plain") -> None:
-    Path(output).write_text(render_options(options, template=template, format=format))
+# -------------------------------------------------------------------
+# Meta information for rendering
+# -------------------------------------------------------------------
+
+@dataclass
+class DocMeta(OptionMeta):
+    """Extended metadata for documentation rendering."""
+    type_name: str = ""
+    value: Any = None
+
+    @classmethod
+    def from_option_meta(
+        cls,
+        om: OptionMeta,
+        *,
+        type_name: str,
+        value: Any,
+    ) -> "DocMeta":
+        """Create DocMeta by copying OptionMeta fields and adding context."""
+        return cls(
+            label=om.label,
+            description=om.description,
+            editable=om.editable,
+            required=om.required,
+            step=om.step,
+            choices=om.choices,
+            choice_strict=om.choice_strict,
+            labels=om.labels,
+            serialize=om.serialize,
+            deserialize=om.deserialize,
+            bounds=om.bounds,
+            default=om.default,
+            default_factory=om.default_factory,
+            doc=om.doc,
+            type_name=type_name,
+            value=value,
+        )
 
 
-def _resolve_template(template: str | Path | None, format: str) -> str:
-    if template:
-        return Path(template).read_text()
+# -------------------------------------------------------------------
+# A single field (leaf)
+# -------------------------------------------------------------------
 
-    templates = {
-        "plain": "templates/plain.txt.j2",
-        "markdown": "templates/docs.md.j2",
-    }
-    rel_path = templates.get(format, templates["plain"])
-    return resources.files("dc_options").joinpath(rel_path).read_text()
+@dataclass
+class DocField(DocNode):
+    meta: DocMeta
 
 
-def _collect_docs(datacls, *, include_values: bool, instance: Any | None, prefix: str = ""):
-    entries = []
+# -------------------------------------------------------------------
+# A section containing child items
+# -------------------------------------------------------------------
+
+@dataclass
+class DocSection(DocNode):
+    meta: Optional[OptionMeta]
+    children: List[DocNode] = field(default_factory=list)
+
+
+def collect_docs(datacls: type[Options], *, instance: Any = None, prefix: str = "") -> DocSection:
+    """
+    Build a full documentation tree for an Options class.
+    """
+    # ----------------------------------------------------------------------
+    # 1) Section-level metadata (from @options decorator)
+    # ----------------------------------------------------------------------
+    cls_meta: OptionMeta | None = getattr(datacls, "__options_meta__", None)
+
+    # These become the top-level section heading, description, doc block
+    section_label = cls_meta.label if cls_meta and cls_meta.label else datacls.__name__
+    section_description = cls_meta.description if cls_meta else None
+    section_doc = cls_meta.doc if cls_meta else None
+
+    # Construct the root section node
+    section = DocSection(
+        name=datacls.__name__,
+        label=section_label,
+        description=section_description,
+        path=prefix,
+        meta=cls_meta,
+        doc=section_doc,
+        children=[],
+    )
+
+    # ----------------------------------------------------------------------
+    # 2) Iterate through the dataclass fields of this Options class
+    # ----------------------------------------------------------------------
     for f in fields(datacls):
-        meta = f.metadata.get("option", {})
-        label = meta.get("label") or f.name
-        description = meta.get("description")
+
+        # Field metadata
+        meta: OptionMeta | None = f.metadata.get("option")
+        label = meta.label if meta and meta.label else f.name
+        description = meta.description if meta else None
+        doc = meta.doc if meta else None
+
+        full_path = prefix + f.name
         value = getattr(instance, f.name) if instance is not None else None
 
-        if _is_options_type(f.type):
-            entries.append({
-                "kind": "section",
-                "name": f.name,
-                "label": label,
-                "description": description,
-                "path": prefix + f.name,
-                "children": _collect_docs(f.type, include_values=include_values, instance=value, prefix=prefix + f.name + "."),
-            })
+        # ------------------------------------------------------------------
+        # 3) Nested section?  (i.e. field whose type is another Options class)
+        # ------------------------------------------------------------------
+        if isinstance(meta, OptionMeta) and _is_options_type(f.type):
+            # Build subtree recursively
+            subsection = collect_docs(
+                f.type,
+                instance=value,
+                prefix=full_path + ".",
+            )
+
+            # Override section label/description/doc from field metadata if present
+            if meta.label:
+                subsection.label = meta.label
+            if meta.description:
+                subsection.description = meta.description
+            if meta.doc:
+                subsection.doc = meta.doc
+
+            section.children.append(subsection)
             continue
 
-        entries.append({
-            "kind": "field",
-            "name": f.name,
-            "label": label,
-            "description": description,
-            "path": prefix + f.name,
-            "value": value,
-            "meta": {
-                "type": _type_name(f.type),
-                "min": meta.get("min"),
-                "max": meta.get("max"),
-                "step": meta.get("step"),
-                "choices": meta.get("choices") or [],
-                "labels": meta.get("labels") or [],
-                "default": meta.get("default"),
-            },
-        })
-    return entries
+        # ------------------------------------------------------------------
+        # 4) Regular field
+        # ------------------------------------------------------------------
+        docmeta = DocMeta(
+            label=meta.label if meta else None,
+            description=meta.description if meta else None,
+            doc=meta.doc if meta else None,
+            step=meta.step if meta else None,
+            choices=meta.choices if meta else None,
+            choice_strict=meta.choice_strict if meta else True,
+            labels=meta.labels if meta else None,
+            serialize=meta.serialize if meta else None,
+            deserialize=meta.deserialize if meta else None,
+            bounds=meta.bounds if meta else None,
+            default=meta.default if meta else None,
+            default_factory=meta.default_factory if meta else None,
+            type_name=_safe_type_name(f.type),
+            value=value,
+        )
+
+        field_node = DocField(
+            name=f.name,
+            label=label,
+            description=description,
+            doc=doc,
+            path=full_path,
+            meta=docmeta,
+        )
+
+        section.children.append(field_node)
+
+    return section
+
+
+def _resolve_template(template_path: str | Path) -> str:
+    """
+    Resolve template from user-provided path or bundled templates.
+
+    Rules:
+        1. If `template_path` is an existing filesystem path → load it.
+        2. Otherwise, treat the string as a template name located in:
+              dc_options/templates/<template_path>
+        3. If not found, raise a clear error.
+    """
+
+    p = Path(template_path)
+
+    # --------------------------------------------------------
+    # Case 1 — User provided a real existing file
+    # --------------------------------------------------------
+    if p.exists():
+        return p.read_text()
+
+    # --------------------------------------------------------
+    # Case 2 — Try internal bundled templates
+    # --------------------------------------------------------
+    try:
+        return resources.files("dc_options").joinpath(f"templates/{p.name}").read_text()
+    except (FileNotFoundError, OSError):
+        pass
+
+    # --------------------------------------------------------
+    # Case 3 — Not found anywhere
+    # --------------------------------------------------------
+    raise FileNotFoundError(
+        f"Template '{template_path}' not found as a filesystem path "
+        f"and not located in dc_options/templates/"
+    )
+
+
+def render(data: Options, template: str | Path = "plain.txt.j2", config: RenderConfig | None = None) -> str:
+    tpl_source = _resolve_template(template)
+    tpl = Template(tpl_source)
+    structure = collect_docs(data.__class__, instance=data)
+    config = config or RenderConfig()
+    print(config)
+    return tpl.render(options=structure, config=config)
 
 
 def _is_options_type(tp):
@@ -81,5 +247,92 @@ def _is_options_type(tp):
         return False
 
 
-def _type_name(tp):
-    return getattr(tp, "__name__", str(tp))
+def _safe_type_name(tp):
+    """
+    Resolve a human-friendly type name for annotations used in dataclasses.
+    Handles:
+        - regular classes
+        - forward references (strings)
+        - Optional[T] / Union[T, None]
+        - parameterized generics
+        - Any / special typing forms
+    """
+    # Forward reference: "MyType"
+    if isinstance(tp, str):
+        return tp
+
+    # Normal class
+    if isinstance(tp, type):
+        return tp.__name__
+
+    # Optional[T] or Union[T, None]
+    origin = get_origin(tp)
+    if origin is Union:
+        args = get_args(tp)
+        # filter None out
+        names = [_safe_type_name(a) for a in args if a is not type(None)]
+        return " | ".join(names)
+
+    # parameterized generic like list[int], dict[str, X]
+    if origin:
+        origin_name = _safe_type_name(origin)
+        args_names = ", ".join(_safe_type_name(a) for a in get_args(tp))
+        return f"{origin_name}[{args_names}]"
+
+    # Fallback (typing.Any, etc.)
+    return str(tp)
+
+
+def replace_text(
+    instr: str,
+    newstr: str,
+    sec_start: str,
+    sec_end: Optional[str] = None,
+    replace_all: bool = True,
+) -> str:
+    """
+    Replace occurrences of text enclosed by sec_start and sec_end
+    (including the markers themselves) with newstr.
+
+    If sec_end is None, use sec_start.
+
+    If replace_all is True (default), replace all occurrences.
+    If replace_all is False, replace only the first occurrence.
+    """
+
+    sec_end = sec_end or sec_start
+    result = []
+    i = 0
+    n = len(instr)
+    replaced_count = 0
+
+    while i < n:
+        # Find start marker
+        start_idx = instr.find(sec_start, i)
+        if start_idx == -1:
+            result.append(instr[i:])
+            break
+
+        # Append text before marker
+        result.append(instr[i:start_idx])
+
+        # Find end marker
+        end_idx = instr.find(sec_end, start_idx + len(sec_start))
+        if end_idx == -1:
+            # No closing marker → append rest
+            result.append(instr[start_idx:])
+            break
+
+        # Skip entire marked region
+        i = end_idx + len(sec_end)
+
+        # Insert replacement
+        result.append(newstr)
+        replaced_count += 1
+
+        # Stop after first replacement if requested
+        if not replace_all and replaced_count == 1:
+            result.append(instr[i:])
+            break
+
+    return "".join(result)
