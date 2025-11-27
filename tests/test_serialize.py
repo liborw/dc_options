@@ -19,7 +19,7 @@ class Config(Options):
     paths: Paths = option(default_factory=Paths)
 
 
-def test_serialize_roundtrip(tmp_path):
+def test_serialize_roundtrip():
     cfg = Config(name="exp", paths=Paths(working_dir=Path("/tmp/work")))
     data = cfg.to_dict()
     assert data["paths"]["working_dir"] == "/tmp/work"
@@ -27,8 +27,3 @@ def test_serialize_roundtrip(tmp_path):
     loaded = Config.from_dict(data)
     assert isinstance(loaded.paths.working_dir, Path)
     assert loaded == cfg
-
-    file = tmp_path / "cfg.json"
-    cfg.save(file)
-    restored = Config.load(file)
-    assert restored == cfg

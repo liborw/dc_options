@@ -4,12 +4,12 @@ from dc_options import Options, option
 
 @dataclass
 class Inner(Options):
-    x: int = option(default=1, range=(0, None))
+    x: int = option(default=1, bounds=(0, None))
 
 
 @dataclass
 class Config(Options):
-    a: int = option(default=5, range=(1, None))
+    a: int = option(default=5, bounds=(1, None))
     inner: Inner = option(default_factory=Inner)
 
 

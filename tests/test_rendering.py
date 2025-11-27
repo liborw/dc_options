@@ -1,38 +1,49 @@
 from dc_options.rendering import replace_text
 
 
-def test_replace_all_simple():
-    text = "A <x> B <x> C"
-    assert replace_text(text, "Y", "<x>") == "A Y B Y C"
-
-
-def test_replace_first_only():
-    text = "A <x> B <x> C"
-    assert replace_text(text, "Y", "<x>", replace_all=False) == "A Y B <x> C"
+def test_replace_first_only_keep_markers():
+    text = "A <x>old</x> B <x>123</x> C"
+    assert replace_text(text, "NEW", "<x>", "</x>") \
+           == "A <x>NEW</x> B <x>123</x> C"
 
 
 def test_identical_markers():
-    text = "Hello ##name##, id ##123##."
-    assert replace_text(text, "X", "##") == "Hello X, id X."
+    text = "Hello ##name## and ##id##"
+    assert replace_text(text, "X", "##") == "Hello ##X## and ##id##"
 
 
 def test_missing_end_marker():
-    text = "Start <tag> but never ends"
+    text = "Start <tag>oops"
     assert replace_text(text, "X", "<tag>", "</tag>") == text
 
 
 def test_no_markers_present():
-    text = "nothing to replace here"
-    assert replace_text(text, "X", "<tag>", "</tag>") == text
+    text = "nothing to replace"
+    assert replace_text(text, "Y", "<x>", "</x>") == text
 
 
-def test_replace_empty_section():
-    text = "A [[ ]] B [[ ]]"
-    assert replace_text(text, "X", "[[", "]]") == "A X B X"
+def test_multiline_replace_first():
+    text = (
+        "L1\n"
+        "START\n"
+        "middle\n"
+        "END\n"
+        "L5\n"
+        "START\n"
+        "second\n"
+        "END\n"
+    )
+    expected = (
+        "L1\n"
+        "STARTREPLACEDEND\n"
+        "L5\n"
+        "START\n"
+        "second\n"
+        "END\n"
+    )
+    assert replace_text(text, "REPLACED", "START", "END") == expected
 
 
-def test_nested_markers_not_supported():
-    text = "<a> one <a> two </a> three </a>"
-    # Current logic replaces only outermost or first match depending on replace_all.
-    # This verifies current (non-nested) behavior.
-    assert replace_text(text, "X", "<a>", "</a>") == "X"
+def test_empty_section_content():
+    text = "A [[ ]] B [[old]]"
+    assert replace_text(text, "X", "[[", "]]") == "A [[X]] B [[old]]"

@@ -5,7 +5,7 @@ import pytest
 
 @dataclass
 class C(Options):
-    v: int = option(default=5, range=(3, 10))
+    v: int = option(default=5, bounds=(3, 10))
 
 
 def test_validation_ok():
@@ -21,8 +21,8 @@ def test_validation_fail():
 
 @dataclass
 class Multi(Options):
-    a: int = option(range=(1, 5))
-    b: int = option(range=(10, None))
+    a: int = option(bounds=(1, 5))
+    b: int = option(bounds=(10, None))
     mode: str = option(choices=["fast", "safe"], default="fast")
     label: str = option(choices=["red"], choice_strict=False, default="blue")
     title: str = option(required=True, default="demo")
