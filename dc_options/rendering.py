@@ -28,6 +28,17 @@ class RenderConfig:
         description="Title of the configuration section",
     )
 
+    render_defaults_commented: bool = option(
+        default=True,
+        description="Render values equal to default as commented-out"
+    )
+
+    render_values: bool = option(
+        default=True,
+        description="Whether actual values are rendered in the config"
+    )
+
+
 # -------------------------------------------------------------------
 # Base node
 # -------------------------------------------------------------------
@@ -100,7 +111,7 @@ class DocSection(DocNode):
     children: List[DocNode] = field(default_factory=list)
 
 
-def collect_docs(datacls: type[Options], *, instance: Any = None, prefix: str = "") -> DocSection:
+def collect_docs(datacls: type[Options], *, instance: Any = None, prefix: str = "", name: str = "") -> DocSection:
     """
     Build a full documentation tree for an Options class.
     """
@@ -116,7 +127,7 @@ def collect_docs(datacls: type[Options], *, instance: Any = None, prefix: str = 
 
     # Construct the root section node
     section = DocSection(
-        name=datacls.__name__,
+        name=name,
         label=section_label,
         description=section_description,
         path=prefix,
@@ -136,7 +147,7 @@ def collect_docs(datacls: type[Options], *, instance: Any = None, prefix: str = 
         description = meta.description if meta else None
         doc = meta.doc if meta else None
 
-        full_path = prefix + f.name
+        full_path = prefix + "." + f.name if len(prefix) > 0 else f.name
         value = getattr(instance, f.name) if instance is not None else None
 
         # ------------------------------------------------------------------
@@ -147,7 +158,8 @@ def collect_docs(datacls: type[Options], *, instance: Any = None, prefix: str = 
             subsection = collect_docs(
                 f.type,
                 instance=value,
-                prefix=full_path + ".",
+                prefix=full_path,
+                name=f.name
             )
 
             # Override section label/description/doc from field metadata if present
@@ -164,19 +176,9 @@ def collect_docs(datacls: type[Options], *, instance: Any = None, prefix: str = 
         # ------------------------------------------------------------------
         # 4) Regular field
         # ------------------------------------------------------------------
-        docmeta = DocMeta(
-            label=meta.label if meta else None,
-            description=meta.description if meta else None,
-            doc=meta.doc if meta else None,
-            step=meta.step if meta else None,
-            choices=meta.choices if meta else None,
-            choice_strict=meta.choice_strict if meta else True,
-            labels=meta.labels if meta else None,
-            serialize=meta.serialize if meta else None,
-            deserialize=meta.deserialize if meta else None,
-            bounds=meta.bounds if meta else None,
-            default=meta.default if meta else None,
-            default_factory=meta.default_factory if meta else None,
+
+        docmeta = DocMeta.from_option_meta(
+            meta or OptionMeta(),
             type_name=_safe_type_name(f.type),
             value=value,
         )
@@ -191,6 +193,9 @@ def collect_docs(datacls: type[Options], *, instance: Any = None, prefix: str = 
         )
 
         section.children.append(field_node)
+
+    # sort children so that sections are at the end
+    section.children.sort(key= lambda n: isinstance(n, DocSection))
 
     return section
 
