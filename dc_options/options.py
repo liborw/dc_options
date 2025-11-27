@@ -248,6 +248,20 @@ class Options:
         return getattr(tp, "__name__", str(tp))
 
 
+def options(cls, *, label=None, description=None, doc=None):
+    # Create a new class that inherits from the parent and the original class
+    new_cls = type(cls.__name__, (Options, cls), dict(cls.__dict__))
+
+    # Attach class-level metadata for documentation
+    new_cls.__options_meta__ = OptionMeta(
+        label=label,
+        description=description,
+        doc=doc,
+    )
+
+    return dataclass(new_cls)
+
+
 def _require_module(module: str, extra: str):
     try:
         return importlib.import_module(module)
