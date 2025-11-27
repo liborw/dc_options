@@ -20,6 +20,7 @@ def option(
     serialize: Optional[Callable[[Any], Any]] = None,
     deserialize: Optional[Callable[[Any], Any]] = None,
     range: Optional[Tuple[Optional[float], Optional[float]]] = None,
+    doc: Optional[str] = None,
     **field_kwargs,
 ):
     """
@@ -62,6 +63,7 @@ def option(
         "labels": labels,
         "serialize": serialize,
         "deserialize": deserialize,
+        "doc": doc
     }
     if range_min is not None or range_max is not None:
         meta["range"] = (range_min, range_max)
